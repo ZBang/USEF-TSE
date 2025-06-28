@@ -5,6 +5,7 @@ import numpy as np
 from models.local import attention
 from models.local import normalization
 
+
 class TransformerEncoderLayerCross(nn.Module):
     """This is an implementation of self-attention encoder layer.
 
@@ -115,7 +116,7 @@ class TransformerEncoderLayerCross(nn.Module):
             src1 = self.norm1(src)
         else:
             src1 = src
-        
+
         # q = self.conv1d1(torch.cat([src1,embd], -1).permute(0,2,1).contiguous())
         # k = self.conv1d2(torch.cat([src1,embd], -1).permute(0,2,1).contiguous())
         # v = self.conv1d3(torch.cat([src1,embd], -1).permute(0,2,1).contiguous())

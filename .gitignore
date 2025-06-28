@@ -1,0 +1,15 @@
+__pycache__/
+.venv
+.ruff_cache
+*.pth.tar
+*.py[cod]
+*.pyo
+*.pyd
+*.db
+*.sqlite
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+*.DS_Store

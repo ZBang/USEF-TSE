@@ -1,0 +1,21 @@
+[project]
+name = "usef-tse"
+version = "0.1.0"
+description = "github.com/ZBang/USEF-TSE"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "torch",
+    "torchaudio",
+    "numpy",
+    "numba>=0.61.2",
+    "tqdm",
+    "mir-eval",
+    "hyperpyyaml",
+    "librosa",
+    "scipy",
+    "python-speech-features",
+    "pesq>=0.0.4",
+    "typer>=0.16.0",
+    "modal>=1.0.5",
+]

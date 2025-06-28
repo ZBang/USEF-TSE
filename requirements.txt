@@ -1,0 +1,12 @@
+torch
+torchaudio
+numpy
+tqdm
+mir-eval
+hyperpyyaml
+librosa
+scipy
+python-speech-features
+pesq>=0.0.4
+typer>=0.16.0
+modal>=1.0.5

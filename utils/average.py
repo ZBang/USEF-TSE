@@ -3,6 +3,7 @@ import numpy as np
 
 class AverageVal(object):
     """Computes and stores the average and current value"""
+
     def __init__(self):
         self.reset()
 
@@ -47,7 +48,7 @@ class AverageMat(object):
         self.sum = np.zeros(self.shape)
         self.count = np.zeros(self.shape)
 
-    def update(self, val, offset=[0,0]):
+    def update(self, val, offset=[0, 0]):
         x_st, y_st = offset
         x_ed = x_st + val.shape[0]
         y_ed = y_st + val.shape[1]

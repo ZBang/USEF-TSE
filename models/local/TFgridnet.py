@@ -1,15 +1,13 @@
 import math
-from collections import OrderedDict
-from typing import Dict, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import init
 from torch.nn.parameter import Parameter
-from models.local.PositionalEncoding import PositionalEncoding
 
 from models.local.get_layer_from_string import get_layer
+
 
 class TF_gridnet_attentionblock(nn.Module):
     def __getitem__(self, key):
@@ -26,7 +24,6 @@ class TF_gridnet_attentionblock(nn.Module):
     ):
         super().__init__()
         assert activation == "prelu"
-
 
         E = math.ceil(
             approx_qk_dim * 1.0 / n_freqs
@@ -100,7 +97,7 @@ class TF_gridnet_attentionblock(nn.Module):
         V = torch.matmul(attn_mat, V)  # [B', T, C*Q]
 
         # V = V.reshape(old_shape)  # [B', T, C, Q]
-        V = V.reshape([old_shape[0],old_T,old_shape[-2],old_shape[-1]])
+        V = V.reshape([old_shape[0], old_T, old_shape[-2], old_shape[-1]])
         V = V.transpose(1, 2)  # [B', C, T, Q]
         emb_dim = V.shape[1]
 
@@ -110,6 +107,7 @@ class TF_gridnet_attentionblock(nn.Module):
         batch = self["attn_concat_proj"](batch)  # [B, C, T, Q])
 
         return batch
+
 
 class GridNetV2Block(nn.Module):
     def __getitem__(self, key):
