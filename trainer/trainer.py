@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from utils.loss.losses import batchMean_sisnrLoss
+from utils.losses import batchMean_sisnrLoss
 
 class Trainer(object):
     
