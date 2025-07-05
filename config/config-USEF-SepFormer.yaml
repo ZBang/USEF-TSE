@@ -1,0 +1,95 @@
+optimizer: !name:torch.optim.Adam
+    lr: 0.0001
+    weight_decay: 0
+
+checkpoint: 1
+continue_from: ''
+max_norm: 5
+
+print_freq: 100
+name: chkpt/test
+
+
+epochs: 200
+batch_size: 2
+num_workers: 2
+valid_batch_size: 1
+
+
+num_spks: 1
+duration: 4
+sample_rate: 8000
+
+train_path: /NASdata/zb/data/wsj0-mix/2speakers_bak/wav8k/min/list/tr
+valid_path: /NASdata/zb/data/wsj0-mix/2speakers_bak/wav8k/min/list/tt_avg
+test_path: /NASdata/zb/data/wsj0-mix/2speakers_bak/wav8k/min/list/tt_avg
+
+mix_scp: mix.scp
+ref_scp: ref.scp
+aux_scp: aux.scp
+
+# Encoder parameters
+N_encoder_out: 256
+out_channels: 256
+kernel_size: 16
+kernel_stride: 8
+embd: 256
+
+
+# Specifying the network
+Encoder: !new:models.model_USEF_SepFormer.Encoder
+    kernel_size: !ref <kernel_size>
+    out_channels: !ref <N_encoder_out>
+
+Decoder: !new:models.model_USEF_SepFormer.Decoder
+    in_channels: !ref <N_encoder_out>
+    out_channels: 1
+    kernel_size: !ref <kernel_size> 
+    stride: !ref <kernel_stride>
+    bias: False
+
+
+Intra_enc_model: !new:models.local.TransformerEncoder.TransformerEncoder
+    num_layers: 8
+    d_model: !ref <out_channels>
+    nhead: 8
+    d_ffn: 1024
+    dropout: 0
+    #normalize_before: True
+
+Inter_enc_model: !new:models.local.TransformerEncoder.TransformerEncoder
+    num_layers: 8
+    d_model: !ref <out_channels>
+    nhead: 8
+    d_ffn: 1024
+    dropout: 0
+    #normalize_before: True
+
+Fusion_mdl: !new:models.local.TransformerEncoderCross.TransformerEncoderCross
+    num_layers: 4
+    d_model: !ref <out_channels>
+    nhead: 8
+    d_ffn: 1024
+    dropout: 0
+    #normalize_before: True
+
+FiLM: !new:models.model_USEF_SepFormer.FiLM
+    size: !ref <out_channels>
+
+
+MaskNet: !new:models.model_USEF_SepFormer.Tar_Model
+    encoder: !ref <Encoder>
+    decoder: !ref <Decoder>
+    intra_enc: !ref <Intra_enc_model>
+    inter_enc: !ref <Inter_enc_model>
+    fusion_mdl: !ref <Fusion_mdl>
+    film: !ref <FiLM>
+    in_channels: !ref <N_encoder_out>
+    out_channels: !ref <out_channels>
+    num_layers: 2
+    norm: ln
+    num_spks: !ref <num_spks>
+    K: 250
+
+modules:
+    masknet: !ref <MaskNet>

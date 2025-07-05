@@ -1,0 +1,63 @@
+optimizer: !name:torch.optim.Adam
+    lr: 0.0001
+    weight_decay: 0
+
+checkpoint: 1
+continue_from: ''
+max_norm: 5
+
+print_freq: 100
+name: chkpt/test
+
+
+epochs: 200
+batch_size: 2
+num_workers: 2
+valid_batch_size: 1
+
+
+num_spks: 1
+duration: 4
+sample_rate: 8000
+
+train_path: path/to/training_data
+valid_path: path/to/valid_data
+test_path: path/to/test_data
+
+mix_scp: mix.scp
+ref_scp: ref.scp
+aux_scp: aux.scp
+
+# Encoder parameters
+out_channels: 256
+
+STFT: !new:utils.feature.STFT
+    n_fft: 128
+    hop_length: 64
+    win_length: 128
+
+iSTFT: !new:utils.feature.iSTFT
+    n_fft: 128
+    hop_length: 64
+    win_length: 128
+
+real_att: !new:models.local.TFgridnet.TF_gridnet_attentionblock
+    emb_dim: 128
+    n_freqs: 65 
+    n_head: 4
+    approx_qk_dim: 512
+
+MaskNet: !new:models.model_USEF_TFGridNet.Tar_Model
+    stft: !ref <STFT>
+    istft: !ref <iSTFT>
+    real_att: !ref <real_att>
+    n_freqs: 65
+    hidden_channels: 256
+    n_head: 4
+    emb_dim: 128
+    emb_ks: 1
+    emb_hs: 1
+    num_layers: 6
+
+modules:
+    masknet: !ref <MaskNet>
