@@ -31,10 +31,7 @@ class Trainer(object):
         os.makedirs(self.save_folder, exist_ok=True)
         self.best_val_loss = float("inf")
         self.start_epoch = 0
-
-        self.specI_loss = nn.L1Loss()
-        self.specR_loss = nn.L1Loss()
-
+        
         if self.continue_from:
             print('Loading checkpoint model %s' % self.continue_from)
             cont = torch.load(self.continue_from)
