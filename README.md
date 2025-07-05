@@ -4,9 +4,14 @@
 
 Official Implementation of USEF-TSE: Universal Speaker Embedding Free Target Speaker Extraction.
 
-Currently, this repository only provides inference code. The complete training code will be open-sourced after the paper revisions are finalized.
-
 To refer to the model class, check [models](./models/) directly.
+
+## Trainging
+you can run
+
+```shell
+bash train.sh
+```
 
 ## Inference
 To run inference on the test sets mentioned in the paper, for example, you can run
