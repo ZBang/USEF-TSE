@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import math
 
+
 class PositionalEncoding(nn.Module):
     """This class implements the absolute sinusoidal positional encoding function.
 
@@ -30,8 +31,7 @@ class PositionalEncoding(nn.Module):
         pe = torch.zeros(self.max_len, input_size, requires_grad=False)
         positions = torch.arange(0, self.max_len).unsqueeze(1).float()
         denominator = torch.exp(
-            torch.arange(0, input_size, 2).float()
-            * -(math.log(10000.0) / input_size)
+            torch.arange(0, input_size, 2).float() * -(math.log(10000.0) / input_size)
         )
 
         pe[:, 0::2] = torch.sin(positions * denominator)

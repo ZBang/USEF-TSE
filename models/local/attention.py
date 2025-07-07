@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class ContentBasedAttention(nn.Module):
-    """ This class implements content-based attention module for seq2seq
+    """This class implements content-based attention module for seq2seq
     learning.
 
     Reference: NEURAL MACHINE TRANSLATION BY JOINTLY LEARNING TO ALIGN
@@ -63,8 +63,7 @@ class ContentBasedAttention(nn.Module):
         self.reset()
 
     def reset(self):
-        """Reset the memory in the attention module.
-        """
+        """Reset the memory in the attention module."""
         self.enc_len = None
         self.precomputed_enc_h = None
         self.mask = None
@@ -84,16 +83,13 @@ class ContentBasedAttention(nn.Module):
         """
 
         if self.precomputed_enc_h is None:
-
             self.precomputed_enc_h = self.mlp_enc(enc_states)
             self.mask = length_to_mask(
                 enc_len, max_len=enc_states.size(1), device=enc_states.device
             )
 
         dec_h = self.mlp_dec(dec_states.unsqueeze(1))
-        attn = self.mlp_attn(
-            torch.tanh(self.precomputed_enc_h + dec_h)
-        ).squeeze(-1)
+        attn = self.mlp_attn(torch.tanh(self.precomputed_enc_h + dec_h)).squeeze(-1)
 
         # mask the padded frames
         attn = attn.masked_fill(self.mask == 0, -np.inf)
@@ -179,8 +175,7 @@ class LocationAwareAttention(nn.Module):
         self.reset()
 
     def reset(self):
-        """Reset the memory in attention module.
-        """
+        """Reset the memory in attention module."""
         self.enc_len = None
         self.precomputed_enc_h = None
         self.mask = None
@@ -199,7 +194,6 @@ class LocationAwareAttention(nn.Module):
             The query tensor.
         """
         if self.precomputed_enc_h is None:
-
             self.precomputed_enc_h = self.mlp_enc(enc_states)
             self.mask = length_to_mask(
                 enc_len, max_len=enc_states.size(1), device=enc_states.device
@@ -235,7 +229,7 @@ class LocationAwareAttention(nn.Module):
 
 
 class KeyValueAttention(nn.Module):
-    """ This class implements a single-headed key-value attention module for seq2seq
+    """This class implements a single-headed key-value attention module for seq2seq
     learning.
 
     Reference: "Attention Is All You Need" by Vaswani et al., sec. 3.2.1
@@ -274,8 +268,7 @@ class KeyValueAttention(nn.Module):
         self.reset()
 
     def reset(self):
-        """Reset the memory in the attention module.
-        """
+        """Reset the memory in the attention module."""
         self.values = None
         self.keys = None
         self.mask = None
@@ -294,7 +287,6 @@ class KeyValueAttention(nn.Module):
         """
 
         if self.keys is None:
-
             self.keys = self.key_linear(enc_states)
             self.values = self.value_linear(enc_states)
             self.mask = length_to_mask(
@@ -310,9 +302,7 @@ class KeyValueAttention(nn.Module):
 
 
 class RelPosEncXL(nn.Module):
-    """
-
-    """
+    """ """
 
     def __init__(self, emb_dim):
         super().__init__()
@@ -336,9 +326,7 @@ class RelPosEncXL(nn.Module):
         """
         seq_len = x.size(1)
         with torch.no_grad():
-            tot_pe = torch.zeros((2, seq_len, self.emb_dim), dtype=x.dtype).to(
-                x
-            )
+            tot_pe = torch.zeros((2, seq_len, self.emb_dim), dtype=x.dtype).to(x)
             pe_past = tot_pe[0]
             pe_future = tot_pe[1]
             positions = (
@@ -360,7 +348,7 @@ class RelPosEncXL(nn.Module):
 
 
 class RelPosMHAXL(nn.Module):
-    """ This class implements the relative multihead implementation similar to that in Transformer XL
+    """This class implements the relative multihead implementation similar to that in Transformer XL
     https://arxiv.org/pdf/1901.02860.pdf
 
     Arguments
@@ -409,22 +397,18 @@ class RelPosMHAXL(nn.Module):
         self.head_dim = embed_dim // num_heads
         self.vhead_dim = self.vdim // num_heads
 
-        assert (
-            self.head_dim * num_heads == self.embed_dim
-        ), "embed_dim must be divisible by num_heads"
-        assert (
-            self.vhead_dim * num_heads == self.vdim
-        ), "vdim must be divisible by num_heads"
+        assert self.head_dim * num_heads == self.embed_dim, (
+            "embed_dim must be divisible by num_heads"
+        )
+        assert self.vhead_dim * num_heads == self.vdim, (
+            "vdim must be divisible by num_heads"
+        )
 
         if self._qkv_same_embed_dim is False:
-            self.qk_proj_weight = nn.Parameter(
-                torch.empty(2 * embed_dim, embed_dim)
-            )
+            self.qk_proj_weight = nn.Parameter(torch.empty(2 * embed_dim, embed_dim))
             self.v_proj_weight = nn.Parameter(torch.empty(self.vdim, embed_dim))
         else:
-            self.in_proj_weight = nn.Parameter(
-                torch.empty(3 * embed_dim, embed_dim)
-            )
+            self.in_proj_weight = nn.Parameter(torch.empty(3 * embed_dim, embed_dim))
 
         if vbias:
             self.value_bias_weight = nn.Parameter(torch.empty(self.vdim))
@@ -436,12 +420,8 @@ class RelPosMHAXL(nn.Module):
 
         self.linear_pos = nn.Linear(embed_dim, embed_dim, bias=False)
 
-        self.pos_bias_u = nn.Parameter(
-            torch.empty(self.head_dim, self.num_heads)
-        )
-        self.pos_bias_v = nn.Parameter(
-            torch.empty(self.head_dim, self.num_heads)
-        )
+        self.pos_bias_u = nn.Parameter(torch.empty(self.head_dim, self.num_heads))
+        self.pos_bias_v = nn.Parameter(torch.empty(self.head_dim, self.num_heads))
 
         if next(self.parameters()).dtype == torch.float16:
             self.attn_fill_value = -65000
@@ -578,9 +558,7 @@ class RelPosMHAXL(nn.Module):
                 1, 1, self.num_heads, self.vhead_dim
             )
 
-        p_k = self.linear_pos(pos_embs).view(
-            1, -1, self.num_heads, self.head_dim
-        )
+        p_k = self.linear_pos(pos_embs).view(1, -1, self.num_heads, self.head_dim)
         # (batch, head, klen, d_k)
 
         q_with_bias_u = (
@@ -611,22 +589,19 @@ class RelPosMHAXL(nn.Module):
                 attn_mask = attn_mask.view(-1, self.num_heads, qlen, klen)
 
             if attn_mask.dtype == torch.bool:
-                attn_score = attn_score.masked_fill(
-                    attn_mask, self.attn_fill_value
-                )
+                attn_score = attn_score.masked_fill(attn_mask, self.attn_fill_value)
             else:
                 attn_score += attn_mask
 
         if key_padding_mask is not None:
             attn_score = attn_score.masked_fill(
-                key_padding_mask.view(bsz, 1, 1, klen), self.attn_fill_value,
+                key_padding_mask.view(bsz, 1, 1, klen),
+                self.attn_fill_value,
             )
 
         attn_score = F.softmax(attn_score, dim=-1)
         attn_score = self.dropout_att(attn_score)
-        x = torch.matmul(
-            attn_score, value.transpose(1, 2)
-        )  # (batch, head, time1, d_k)
+        x = torch.matmul(attn_score, value.transpose(1, 2))  # (batch, head, time1, d_k)
         x = (
             x.transpose(1, 2)
             .contiguous()
@@ -640,7 +615,7 @@ class RelPosMHAXL(nn.Module):
 
 
 class MultiheadAttention(nn.Module):
-    """ The class is a wrapper of MultiHead Attention for torch.nn.MultiHeadAttention.
+    """The class is a wrapper of MultiHead Attention for torch.nn.MultiHeadAttention.
 
     Reference: https://pytorch.org/docs/stable/nn.html
 
@@ -838,6 +813,7 @@ class PositionalwiseFeedForward(nn.Module):
 
         return x
 
+
 class PositionalwiseFeedForward_v2(nn.Module):
     """The class implements the positional-wise feed forward module in
     “Attention Is All You Need”.
@@ -873,9 +849,10 @@ class PositionalwiseFeedForward_v2(nn.Module):
         activation=nn.ReLU,
     ):
         super().__init__()
-        
+
         from torch.nn.modules.rnn import LSTM
-        self.rnn = LSTM(input_size, 2*d_ffn, 1, bidirectional=True)
+
+        self.rnn = LSTM(input_size, 2 * d_ffn, 1, bidirectional=True)
         if input_shape is None and input_size is None:
             raise ValueError("Expected one of input_shape or input_size")
 
@@ -883,11 +860,11 @@ class PositionalwiseFeedForward_v2(nn.Module):
             input_size = input_shape[-1]
 
         self.ffn = nn.Sequential(
-            #nn.Linear(2*input_size, d_ffn),
-            #LSTM(input_size, 2*d_ffn, 1, bidirectional=True),
+            # nn.Linear(2*input_size, d_ffn),
+            # LSTM(input_size, 2*d_ffn, 1, bidirectional=True),
             activation(),
             nn.Dropout(dropout),
-            nn.Linear(4*d_ffn, input_size),
+            nn.Linear(4 * d_ffn, input_size),
         )
 
     def forward(self, x):

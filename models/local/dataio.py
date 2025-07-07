@@ -135,8 +135,7 @@ def load_data_csv(csv_path, replacements={}):
                 del row["ID"]  # This is used as a key in result, instead.
             except KeyError:
                 raise KeyError(
-                    "CSV has to have an 'ID' field, with unique ids"
-                    " for all data points"
+                    "CSV has to have an 'ID' field, with unique ids for all data points"
                 )
             if data_id in result:
                 raise ValueError(f"Duplicate id: {data_id}")
@@ -279,9 +278,7 @@ def read_audio_multichannel(waveforms_obj):
     stop = waveforms_obj.get("stop", start - 1)
     num_frames = stop - start
     for f in files:
-        audio, fs = torchaudio.load(
-            f, num_frames=num_frames, frame_offset=start
-        )
+        audio, fs = torchaudio.load(f, num_frames=num_frames, frame_offset=start)
         waveforms.append(audio)
 
     out = torch.cat(waveforms, 0)
@@ -692,9 +689,9 @@ def length_to_mask(length, max_len=None, dtype=None, device=None):
 
     if max_len is None:
         max_len = length.max().long().item()  # using arange to generate mask
-    mask = torch.arange(
-        max_len, device=length.device, dtype=length.dtype
-    ).expand(len(length), max_len) < length.unsqueeze(1)
+    mask = torch.arange(max_len, device=length.device, dtype=length.dtype).expand(
+        len(length), max_len
+    ) < length.unsqueeze(1)
 
     if dtype is None:
         dtype = length.dtype
@@ -1002,7 +999,7 @@ def merge_csvs(data_folder, csv_lst, merged_csv):
                     # Checking header
                     if line != header:
                         raise ValueError(
-                            "Different header for " f"{csv_lst[0]} and {csv}."
+                            f"Different header for {csv_lst[0]} and {csv}."
                         )
                     continue
                 lines.append(line)

@@ -5,6 +5,7 @@ Authors
  * Guillermo Cámbara 2021
  * Sarthak Yadav 2022
 """
+
 import torch
 import torch.nn as nn
 
@@ -83,9 +84,7 @@ class BatchNorm1d(nn.Module):
             if x.ndim == 3:
                 x = x.reshape(shape_or[0] * shape_or[1], shape_or[2])
             else:
-                x = x.reshape(
-                    shape_or[0] * shape_or[1], shape_or[3], shape_or[2]
-                )
+                x = x.reshape(shape_or[0] * shape_or[1], shape_or[3], shape_or[2])
 
         elif not self.skip_transpose:
             x = x.transpose(-1, 1)
@@ -413,7 +412,10 @@ class GroupNorm(nn.Module):
             input_size = input_shape[-1]
 
         self.norm = torch.nn.GroupNorm(
-            num_groups, input_size, eps=self.eps, affine=self.affine,
+            num_groups,
+            input_size,
+            eps=self.eps,
+            affine=self.affine,
         )
 
     def forward(self, x):
@@ -473,7 +475,13 @@ class ExponentialMovingAverage(nn.Module):
         self.skip_transpose = skip_transpose
         self.trainable = trainable
         weights = (
-            torch.ones(input_size,) if self._per_channel else torch.ones(1,)
+            torch.ones(
+                input_size,
+            )
+            if self._per_channel
+            else torch.ones(
+                1,
+            )
         )
         self._weights = nn.Parameter(
             weights * self._coeff_init, requires_grad=trainable
@@ -482,10 +490,10 @@ class ExponentialMovingAverage(nn.Module):
     def forward(self, x):
         """Returns the normalized input tensor.
 
-       Arguments
-        ---------
-        x : torch.Tensor (batch, time, channels)
-            input to normalize.
+        Arguments
+         ---------
+         x : torch.Tensor (batch, time, channels)
+             input to normalize.
         """
         if not self.skip_transpose:
             x = x.transpose(1, -1)
@@ -578,9 +586,7 @@ class PCEN(nn.Module):
         self.delta = nn.Parameter(
             torch.ones(input_size) * delta, requires_grad=trainable
         )
-        self.root = nn.Parameter(
-            torch.ones(input_size) * root, requires_grad=trainable
-        )
+        self.root = nn.Parameter(torch.ones(input_size) * root, requires_grad=trainable)
 
         self.ema = ExponentialMovingAverage(
             input_size,
@@ -600,12 +606,8 @@ class PCEN(nn.Module):
         """
         if not self.skip_transpose:
             x = x.transpose(1, -1)
-        alpha = torch.min(
-            self.alpha, torch.tensor(1.0, dtype=x.dtype, device=x.device)
-        )
-        root = torch.max(
-            self.root, torch.tensor(1.0, dtype=x.dtype, device=x.device)
-        )
+        alpha = torch.min(self.alpha, torch.tensor(1.0, dtype=x.dtype, device=x.device))
+        root = torch.max(self.root, torch.tensor(1.0, dtype=x.dtype, device=x.device))
         ema_smoother = self.ema(x)
         one_over_root = 1.0 / root
         output = (
@@ -613,9 +615,7 @@ class PCEN(nn.Module):
             + self.delta.view(1, -1, 1)
         ) ** one_over_root.view(1, -1, 1) - self.delta.view(
             1, -1, 1
-        ) ** one_over_root.view(
-            1, -1, 1
-        )
+        ) ** one_over_root.view(1, -1, 1)
         if not self.skip_transpose:
             output = output.transpose(1, -1)
         return output

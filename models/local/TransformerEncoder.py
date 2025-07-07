@@ -5,6 +5,7 @@ import numpy as np
 from models.local import attention
 from models.local import normalization
 
+
 class TransformerEncoderLayer(nn.Module):
     """This is an implementation of self-attention encoder layer.
 

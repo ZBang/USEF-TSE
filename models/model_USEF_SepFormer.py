@@ -8,7 +8,6 @@ Authors
  * Jianyuan Zhong 2020
 """
 
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -19,20 +18,21 @@ from models.local.PositionalEncoding import PositionalEncoding
 
 EPS = 1e-8
 
+
 def select_norm(norm, dim, shape, eps=1e-8):
-    
     if norm == "ln":
         return nn.GroupNorm(1, dim, eps=eps)
     else:
         return nn.BatchNorm1d(dim)
 
+
 class FiLM(nn.Module):
-    def __init__(self, size = 256):
+    def __init__(self, size=256):
         super(FiLM, self).__init__()
-        self.linear1 = nn.Linear(size,size)
-        self.linear2 = nn.Linear(size,size)
-    
-    def forward(self,x,aux):
+        self.linear1 = nn.Linear(size, size)
+        self.linear2 = nn.Linear(size, size)
+
+    def forward(self, x, aux):
         x = x * self.linear1(aux) + self.linear2(aux)
         return x
 
@@ -135,9 +135,7 @@ class Decoder(nn.ConvTranspose1d):
         """
 
         if x.dim() not in [2, 3]:
-            raise RuntimeError(
-                "{} accept 3/4D tensor as input".format(self.__name__)
-            )
+            raise RuntimeError("{} accept 3/4D tensor as input".format(self.__name__))
         x = super().forward(x if x.dim() == 3 else torch.unsqueeze(x, 1))
 
         if torch.squeeze(x).dim() == 1:
@@ -153,29 +151,23 @@ class Interblock(nn.Module):
         d_model,
         intra_enc,
         inter_enc,
-        max_length = 20000,
+        max_length=20000,
     ):
         super(Interblock, self).__init__()
-        
+
         self.intra_mdl = intra_enc
-        self.inter_mdl = inter_enc 
-        
-        self.intra_linear = nn.Linear(
-            d_model, d_model
-        )
-        self.inter_linear = nn.Linear(
-            d_model, d_model
-        )
-        
+        self.inter_mdl = inter_enc
+
+        self.intra_linear = nn.Linear(d_model, d_model)
+        self.inter_linear = nn.Linear(d_model, d_model)
+
         self.intra_norm = select_norm("ln", d_model, 4)
         self.inter_norm = select_norm("ln", d_model, 4)
 
-        self.pos_enc = PositionalEncoding(d_model,max_length)
+        self.pos_enc = PositionalEncoding(d_model, max_length)
 
-    
     def forward(self, x):
-
-        B,N,K,S = x.shape
+        B, N, K, S = x.shape
 
         # intra_module
         intra = x.permute(0, 3, 2, 1).contiguous().view(B * S, K, N)
@@ -186,7 +178,7 @@ class Interblock(nn.Module):
         intra = self.intra_norm(intra) + x
 
         inter = intra.permute(0, 2, 3, 1).contiguous().view(B * K, S, N)
-        inter = self.inter_mdl(inter+self.pos_enc(inter))[0]
+        inter = self.inter_mdl(inter + self.pos_enc(inter))[0]
         inter = self.inter_linear(inter)
         inter = inter.view(B, K, S, N)
         inter = inter.permute(0, 3, 1, 2).contiguous()
@@ -197,9 +189,7 @@ class Interblock(nn.Module):
         return out
 
 
-
 class Tar_Model(nn.Module):
-
     def __init__(
         self,
         encoder,
@@ -220,7 +210,7 @@ class Tar_Model(nn.Module):
         self.num_spks = num_spks
         self.num_layers = num_layers
 
-        self.pos_enc = PositionalEncoding(out_channels,max_length)
+        self.pos_enc = PositionalEncoding(out_channels, max_length)
 
         self.norm_m = select_norm(norm, in_channels, 3)
         self.conv1d1 = nn.Conv1d(in_channels, out_channels, 1, bias=False)
@@ -229,17 +219,12 @@ class Tar_Model(nn.Module):
         self.encoder = encoder
         self.decoder = decoder
 
-
-        self.conv2d = nn.Conv2d(
-            out_channels, out_channels*num_spks, kernel_size=1
-        )
+        self.conv2d = nn.Conv2d(out_channels, out_channels * num_spks, kernel_size=1)
         self.end_conv1x1 = nn.Conv1d(out_channels, out_channels, 1, bias=False)
         self.prelu = nn.PReLU()
         self.activation = nn.ReLU()
         # gated output layer
-        self.output = nn.Sequential(
-            nn.Conv1d(out_channels, out_channels, 1), nn.Tanh()
-        )
+        self.output = nn.Sequential(nn.Conv1d(out_channels, out_channels, 1), nn.Tanh())
         self.output_gate = nn.Sequential(
             nn.Conv1d(out_channels, out_channels, 1), nn.Sigmoid()
         )
@@ -248,7 +233,7 @@ class Tar_Model(nn.Module):
 
         self.fusion_norm = select_norm("ln", out_channels, 3)
         self.film = film
-        
+
         self.dual_mdl = nn.ModuleList([])
         for i in range(num_layers):
             self.dual_mdl.append(
@@ -261,37 +246,31 @@ class Tar_Model(nn.Module):
                 )
             )
 
-
-
     def forward(self, input, aux):
-
         # [B, N, L]
         mix_w = self.encoder(input)
         aux = self.encoder(aux)
-        
+
         x = self.norm_m(mix_w)
         aux = self.norm_m(aux)
-
 
         # [B, N, L]
         x = self.conv1d1(x)
         aux = self.conv1d1(aux)
 
-        x = x.permute(0,2,1).contiguous()
-        aux = aux.permute(0,2,1).contiguous()
-
+        x = x.permute(0, 2, 1).contiguous()
+        aux = aux.permute(0, 2, 1).contiguous()
 
         aux = self.fusion_mdl(x, aux)[0]
-        
-        x = self.film(x,aux)
-        x = self.fusion_norm(x.permute(0,2,1).contiguous())
 
-        x, gap_x = self._Segmentation(x, self.K) 
+        x = self.film(x, aux)
+        x = self.fusion_norm(x.permute(0, 2, 1).contiguous())
+
+        x, gap_x = self._Segmentation(x, self.K)
 
         for i in range(self.num_layers):
-
             x = self.dual_mdl[i](x)
-        
+
         x = self.prelu(x)
         x = self.conv2d(x)
         B, _, K, S = x.shape
@@ -310,10 +289,7 @@ class Tar_Model(nn.Module):
         x = mix_w * x
 
         est_source = torch.cat(
-            [
-                self.decoder(x[i]).unsqueeze(-1)
-                for i in range(self.num_spks)
-            ],
+            [self.decoder(x[i]).unsqueeze(-1) for i in range(self.num_spks)],
             dim=-1,
         )
 
@@ -323,10 +299,9 @@ class Tar_Model(nn.Module):
             est_source = F.pad(est_source, (0, 0, 0, T_origin - T_est))
         else:
             est_source = est_source[:, :T_origin, :]
-        
 
         return est_source.squeeze(-1)
-    
+
     def _padding(self, input, K):
         """Padding the audio times.
 
@@ -380,9 +355,7 @@ class Tar_Model(nn.Module):
         # [B, N, K, S]
         input1 = input[:, :, :-P].contiguous().view(B, N, -1, K)
         input2 = input[:, :, P:].contiguous().view(B, N, -1, K)
-        input = (
-            torch.cat([input1, input2], dim=3).view(B, N, -1, K).transpose(2, 3)
-        )
+        input = torch.cat([input1, input2], dim=3).view(B, N, -1, K).transpose(2, 3)
 
         return input.contiguous(), gap
 
